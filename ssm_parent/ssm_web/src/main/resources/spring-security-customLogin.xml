@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:security="http://www.springframework.org/schema/security"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+       http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/security
+       http://www.springframework.org/schema/security/spring-security.xsd
+">
+
+    <!--配置不拦截login.jsp，security=none表明该URL路径不加入安全控制-->
+    <security:http pattern="/login.jsp" security="none"/>
+    <!--不拦截静态资源-->
+    <security:http pattern="/css/**" security="none"/>
+    <security:http pattern="/img/**" security="none"/>
+    <security:http pattern="/plugins/**" security="none"/>
+
+    <!--作用二：授权认证-->
+    <!--
+        配置拦截的规则：
+        auto-config：是否使用SpringSecurity自带的页面
+        use-expressions：是否使用spell表达式
+            如果使用表达式：
+                access="hasRole('ROLE_USER')"
+    -->
+    <security:http auto-config="false" use-expressions="true">
+
+        <!--
+            配置拦截的请求地址，任何请求地址都必须有ROLE_USER的权限
+            SpringSecurity中内置了两个角色：ROLE_USER和ROLE_ADMIN
+            -->
+        <security:intercept-url pattern="/**" access="hasAnyRole('ROLE_USER','ROLE_ADMIN','ROLE_VIP')"/>
+
+        <!--
+            form-login：用于登录的自定义配置
+            login-page：指定自定义登录页面
+            login-processing-url：登录功能的处理逻辑（security框架内置的）
+            authentication-failure-url：配置登录失败后跳转的页面
+            default-target-url：配置登录成功后默认跳转的页面
+        -->
+        <security:form-login
+            login-page="/login.jsp"
+            login-processing-url="/login"
+            default-target-url="/index.jsp"
+            authentication-failure-url="/login.jsp"/>
+
+        <!--
+            关闭跨站请求伪造
+            SpringSecurity认为外部的页面都是一种入侵，
+            如果需要配置自定义的页面，需要关闭它的这种机制
+        -->
+        <security:csrf disabled="true"/>
+
+        <!--
+            配置SpringSecurity的退出功能
+            用户注销功能有一个默认处理的url：/logout.jsp
+            logout-success-url：配置成功注销后跳转的页面
+        -->
+        <security:logout logout-success-url="/login.jsp"/>
+    </security:http>
+
+
+    <!--作用一：用户认证-->
+    <!--
+        配置认证信息
+        authentication-manager：用户认证管理器
+    -->
+    <security:authentication-manager>
+        <!--
+        从数据库读取用户名和密码
+        user-service-ref：引用用户信息读取bean(配置为对应bean的id)
+    -->
+        <security:authentication-provider user-service-ref="userService">
+            <security:password-encoder ref="bCryptPasswordEncoder"/>
+        </security:authentication-provider>
+    </security:authentication-manager>
+
+    <!--定义Bcrypt加密算法工具类对象(BCryptPasswordEncoder加密工具类是security的jar中的，不需要额外引入jar)-->
+    <bean id="bCryptPasswordEncoder" class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder"/>
+</beans>

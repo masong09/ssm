@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.suen.ssm.mapper.SysUserMapper">
+    <!--根据username查询用户信息-->
+    <select id="querySysUserByUsername" parameterType="string" resultType="sysUser">
+        select id,username,password,email,phoneNum,status
+        from sys_user where username=#{username}
+    </select>
+
+    <!--查询全部用户信息-->
+    <select id="queryUserList" resultType="sysUser">
+        select id,username,password,email,phoneNum,status from sys_user
+    </select>
+
+    <!--新建用户-->
+    <insert id="saveUser" parameterType="sysUser">
+        <selectKey order="AFTER" keyProperty="id" resultType="long">
+            select last_insert_id()
+        </selectKey>
+        insert into sys_user(username,password,email,phoneNum,status)
+        values(#{username},#{password},#{email},#{phoneNum},#{status})
+    </insert>
+
+
+    <!--根据id查询用户的详细信息（用户基本信息、角色信息、权限信息）-->
+    <select id="queryUserById" parameterType="long" resultMap="aloneUserResultMap">
+          select
+              su.id userid,
+              su.username,
+              su.password,
+              su.email,
+              su.phoneNum,
+              su.status,
+              sr.id roleid,
+              sr.roleName,
+              sr.roleDesc,
+              sp.id permissionid,
+              sp.permissionName,
+              sp.url,
+              sp.pid
+          from
+              sys_user su
+          left join sys_user_role sur
+              on su.id = sur.userId
+          left join sys_role sr
+              on sur.roleId = sr.id
+          left join sys_role_permission srp
+              on sr.id = srp.roleId
+          left join sys_permission sp
+              on srp.permissionId = sp.id
+          where su.id = #{id}
+    </select>
+    <!--配置手动映射-->
+    <resultMap id="aloneUserResultMap" type="sysUser">
+        <id column="userid" property="id"/>
+        <result column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="email" property="email"/>
+        <result column="phoneNum" property="phoneNum"/>
+        <result column="status" property="status"/>
+        <!--第一层嵌套sysRole-->
+        <collection property="sysRoleList" ofType="sysRole">
+            <id column="roleid" property="id"/>
+            <result column="roleName" property="roleName"/>
+            <result column="roleDesc" property="roleDesc"/>
+            <!--第二层嵌套sysPermission-->
+            <collection property="sysPermissionList" ofType="sysPermission">
+                <id column="permissionid" property="id"/>
+                <result column="permissionName" property="permissionName"/>
+                <result column="url" property="url"/>
+                <result column="pid" property="pid"/>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <!--根据userId删除用户-角色关系-->
+    <delete id="deleteUserRoleByUserId" parameterType="long">
+        delete from sys_user_role where userId=#{userId}
+    </delete>
+
+    <!--新建用户-角色关系-->
+    <insert id="saveUserRole" parameterType="map">
+        insert into sys_user_role(userId,roleId) values(#{userId},#{roleId})
+    </insert>
+</mapper>

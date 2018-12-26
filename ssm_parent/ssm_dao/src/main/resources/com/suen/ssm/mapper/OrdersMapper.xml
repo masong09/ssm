@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.suen.ssm.mapper.OrdersMapper">
+
+    <!--查询全部订单信息-->
+    <select id="queryOrdersList" resultMap="ordersProductMap">
+        select o.id,
+        o.orderNum,
+        o.orderTime,
+        o.peopleCount,
+        o.orderDesc,
+        o.payType,
+        o.orderStatus,
+        p.productName,
+        p.cityName,
+        p.departureTime
+        from orders o
+        left join product p
+        on o.productId = p.id
+    </select>
+    <resultMap id="ordersProductMap" type="orders">
+        <!--两部分数据：订单数据+关联的产品数据-->
+        <!--订单数据-->
+        <id column="id" property="id"/>
+        <result column="orderNum" property="orderNum"/>
+        <result column="orderTime" property="orderTime"/>
+        <result column="peopleCount" property="peopleCount"/>
+        <result column="orderDesc" property="orderDesc"/>
+        <result column="payType" property="payType"/>
+        <result column="orderStatus" property="orderStatus"/>
+        <!--关联的产品数据-->
+        <association property="product" javaType="product">
+            <result column="productName" property="productName"/>
+            <result column="cityName" property="cityName"/>
+            <result column="departureTime" property="departureTime"/>
+        </association>
+    </resultMap>
+
+
+    <!--根据id查询订单信息-->
+    <select id="queryOrderById" parameterType="long" resultMap="aloneOrdersProductMap">
+        select o.id,
+            o.orderNum,
+            o.orderTime,
+            o.peopleCount,
+            o.orderDesc,
+            o.payType,
+            o.orderStatus,
+            o.productId
+        from orders o
+        where o.id=#{id}
+    </select>
+    <resultMap id="aloneOrdersProductMap" type="orders">
+        <!--两部分数据：订单数据+关联的产品数据-->
+        <!--订单数据-->
+        <id column="id" property="id"/>
+        <result column="orderNum" property="orderNum"/>
+        <result column="orderTime" property="orderTime"/>
+        <result column="peopleCount" property="peopleCount"/>
+        <result column="orderDesc" property="orderDesc"/>
+        <result column="payType" property="payType"/>
+        <result column="orderStatus" property="orderStatus"/>
+        <!--关联的产品数据-->
+        <association property="product" javaType="product">
+            <result column="productId" property="id"/>
+        </association>
+    </resultMap>
+
+    <!--新建订单-->
+    <insert id="saveOrder" parameterType="orders">
+        <selectKey order="AFTER" resultType="long" keyProperty="id">
+            select last_insert_id()
+        </selectKey>
+        insert  into orders(orderNum,orderTime,peopleCount,orderDesc,payType,orderStatus,productId)
+        values(#{orderNum},#{orderTime},#{peopleCount},#{orderDesc},#{payType},#{orderStatus},#{product.id})
+    </insert>
+
+
+    <!--删除订单-->
+    <delete id="deleteOrders" parameterType="long[]">
+        delete from orders
+        <foreach collection="array" open="where id in(" close=")" item="item" separator=",">
+            #{item}
+        </foreach>
+    </delete>
+
+    <!--更新商品信息-->
+    <update id="updateOrders" parameterType="orders">
+        update orders set
+            orderNum=#{orderNum},
+            orderTime=#{orderTime},
+            peopleCount=#{peopleCount},
+            orderDesc=#{orderDesc},
+            payType=#{payType},
+            orderStatus=#{orderStatus},
+            productId=#{product.id}
+            where id=#{id}
+    </update>
+</mapper>

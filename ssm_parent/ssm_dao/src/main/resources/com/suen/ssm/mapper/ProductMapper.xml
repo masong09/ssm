@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.suen.ssm.mapper.ProductMapper">
+
+    <!--查询全部商品信息-->
+    <select id="queryProductList" resultType="product">
+        select
+          id,
+          productNum,
+          productName,
+          cityName,
+          departureTime,
+          productPrice,
+          productDesc,
+          productStatus
+        from
+          product
+    </select>
+
+    <!--添加商品-->
+    <insert id="saveProduct" parameterType="product">
+        <selectKey order="AFTER" resultType="Long" keyProperty="id">
+            select last_insert_id()
+        </selectKey>
+        INSERT INTO product (productNum,productName,cityName,departureTime,productPrice,productDesc,productStatus)
+        VALUES(#{productNum},#{productName},#{cityName},#{departureTime},#{productPrice},#{productDesc},#{productStatus})
+    </insert>
+
+    <!--根据id查询商品信息-->
+    <select id="queryProductById" parameterType="long" resultType="product">
+          select
+              id,
+              productNum,
+              productName,
+              cityName,
+              departureTime,
+              productPrice,
+              productDesc,
+              productStatus
+        from product where id=#{id}
+    </select>
+
+    <!--更新商品信息-->
+    <update id="updateProduct" parameterType="product">
+        update product set
+        productNum=#{productNum},
+        productName=#{productName},
+        cityName=#{cityName},
+        departureTime=#{departureTime},
+        productPrice=#{productPrice},
+        productDesc=#{productDesc},
+        productStatus=#{productStatus}
+        where id=#{id}
+    </update>
+
+    <!--删除商品-->
+    <delete id="deleteProducts" parameterType="long[]">
+        delete from product
+        <foreach collection="array" open="where id in(" close=")" item="item" separator=",">
+            #{item}
+        </foreach>
+    </delete>
+
+    <!--查询product表的总记录数-->
+    <select id="queryProductCount" resultType="long">
+        select count(id) from product
+    </select>
+
+    <!--分页查询-->
+    <!--MySQL分页使用limit-->
+    <!--不能使用#{}接收参数，因为#{}会自动识别，给字段加上单引号‘ ’ 变成字符串，影响计算，所以使用${}接收参数-->
+    <select id="queryProductListPage" parameterType="map" resultType="product">
+        select * from product limit ${(pageNum-1)*pageSize},${pageSize}
+    </select>
+</mapper>
